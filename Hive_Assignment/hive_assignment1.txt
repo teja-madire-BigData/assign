@@ -1,0 +1,353 @@
+1. Download vechile sales data -> https://github.com/shashank-mishra219/Hive-Class/blob/main/sales_order_data.csv
+2. Store raw data into hdfs location
+
+$ hadoop fs -put /config/workspace/sales_order_data.csv /tmp
+
+
+3. Create a internal hive table "sales_order_csv" which will store csv data sales_order_csv .. make sure to skip header row while creating table
+
+
+hive> create table sales_order_csv(
+    > ORDERNUMBER int,QUANTITYORDERED int,PRICEEACH float,ORDERLINENUMBER int,SALES float,STATUS string,QTR_ID int,MONTH_ID int,YEAR_ID int,
+    > PRODUCTLINE string,MSRP int,PRODUCTCODE string,PHONE string,CITY string,STATE string,POSTALCODE string,COUNTRY string,TERRITORY string,CONTACTLASTNAME string,
+    > CONTACTFIRSTNAME string,DEALSIZE string
+    > )
+    > row format delimited
+    > fields terminated by ','
+    > tblproperties ("skip.header.line.count"="1");
+
+
+4. Load data from hdfs path into "sales_order_csv" 
+
+hive>load  data inpath '/tmp/sales_order_data.csv' into table sales_order_csv;
+
+
+
+5. Create an internal hive table which will store data in ORC format "sales_order_orc"
+
+hive> create table sales_order_orc(
+    > ORDERNUMBER int,QUANTITYORDERED int,PRICEEACH float,ORDERLINENUMBER int,SALES float,STATUS string,QTR_ID int,MONTH_ID int,YEAR_ID int,
+    > PRODUCTLINE string,MSRP int,PRODUCTCODE string,PHONE string,CITY string,STATE string,POSTALCODE string,COUNTRY string,TERRITORY string,
+    > CONTACTLASTNAME string,CONTACTFIRSTNAME string,DEALSIZE string
+    > )
+    > stored as orc;
+
+
+
+6. Load data from "sales_order_csv" into "sales_order_orc"
+
+
+hive> from sales_order_csv insert overwrite table sales_order_orc select *;
+
+
+
+Perform below menioned queries on "sales_order_orc" table :
+
+a. Calculatye total sales per year
+
+hive> select YEAR_ID,SUM(SALES) from sales_order_orc group by YEAR_ID;
+
+output: 
+
+2003    3516979.547241211
+2004    4724162.593383789
+2005    1791486.7086791992
+
+
+
+b. Find a product for which maximum orders were placed
+
+
+hive> select productline,sum(quantityordered) as maximum from sales_order_orc group by productline order by maximum desc limit 1;
+
+
+output: 
+
+productline     maximum
+Classic Cars    33992 
+
+
+
+c. Calculate the total sales for each quarter
+
+
+hive> set hive.cli.print.header=true;
+hive> select qtr_id as quater,sum(sales) as sales from sales_order_orc group by qtr_id;
+
+output:
+
+quater  sales
+1       2350817.726501465
+2       2048120.3029174805
+3       1758910.808959961
+4       3874780.010925293
+
+
+d. In which quarter sales was minimum
+
+
+hive> select qtr_id as quater,sum(sales) as minimum from sales_order_orc group by qtr_id order by minimum limit 1;
+
+output:
+
+quater  minimum
+3       1758910.808959961
+
+
+e. In which country sales was maximum and in which country sales was minimum
+
+# minimum
+
+hive> select country,sum(sales) as minimum from sales_order_orc group by country order by minimum asc limit 1;
+
+output:
+
+country minimum
+Ireland 57756.43029785156
+
+
+# maximum
+
+hive> select country,sum(sales) as maximum from sales_order_orc group by country order by maximum desc limit 1;
+
+output:
+
+country maximum
+USA     3627982.825744629
+
+
+
+f. Calculate quartelry sales for each city
+
+
+hive> select city,qtr_id,sum(sales) from sales_order_orc group by city,qtr_id;
+
+output:
+
+Bergamo 1       56181.320068359375
+Boras   1       31606.72021484375
+Brickhaven      1       31474.7802734375
+Brisbane        1       16118.479858398438
+Bruxelles       1       18800.089721679688
+Burbank 1       37850.07958984375
+Burlingame      1       13529.570190429688
+Cambridge       1       21782.699951171875
+Charleroi       1       16628.16015625
+Cowes   1       26906.68017578125
+Dublin  1       38784.470458984375
+Espoo   1       51373.49072265625
+Frankfurt       1       48698.82922363281
+Gensve  1       50432.549560546875
+Glendale        1       3987.199951171875
+Graz    1       8775.159912109375
+Helsinki        1       26422.819458007812
+Kobenhavn       1       58871.110107421875
+Lille   1       20178.1298828125
+London  1       8477.219970703125
+Los Angeles     1       23889.320068359375
+Lule    1       9748.999755859375
+Lyon    1       101339.13977050781
+Madrid  1       357668.4899291992
+Makati City     1       55245.02014160156
+Manchester      1       51017.919860839844
+Marseille       1       2317.43994140625
+Melbourne       1       49637.57067871094
+Minato-ku       1       38191.38977050781
+NYC     1       32647.809814453125
+Nantes  1       59617.39978027344
+Nashua  1       12133.25
+New Bedford     1       48578.95935058594
+Newark  1       8722.1201171875
+North Sydney    1       65012.41955566406
+Osaka   1       50490.64013671875
+Oulu    1       49055.40026855469
+Paris   1       71494.17944335938
+Pasadena        1       44273.359436035156
+Philadelphia    1       27398.820434570312
+Reims   1       52029.07043457031
+San Diego       1       87489.23010253906
+San Francisco   1       72899.19995117188
+San Rafael      1       267315.2586669922
+Singapore       1       28395.18994140625
+South Brisbane  1       21730.029907226562
+Stavern 1       54701.999755859375
+Toulouse        1       15139.1201171875
+Versailles      1       5759.419921875
+Allentown       2       6166.7998046875
+Barcelona       2       4219.2001953125
+Boston  2       74994.240234375
+Brickhaven      2       7277.35009765625
+Bridgewater     2       75778.99060058594
+Bruxelles       2       8411.949829101562
+Cambridge       2       14380.920043945312
+Charleroi       2       1711.260009765625
+Chatswood       2       43971.429931640625
+Espoo   2       31018.230102539062
+Glen Waverly    2       14378.089965820312
+Glendale        2       20350.949768066406
+Kobenhavn       2       62091.880615234375
+Las Vegas       2       33847.61975097656
+Liverpool       2       91211.0595703125
+London  2       32376.29052734375
+Madrid  2       339588.0513305664
+Marseille       2       52481.840087890625
+Melbourne       2       60135.84033203125
+Minato-ku       2       26482.700256347656
+Montreal        2       58257.50012207031
+NYC     2       165100.33947753906
+Nantes  2       60344.990173339844
+New Haven       2       36973.309814453125
+Newark  2       74506.06909179688
+Osaka   2       17114.43017578125
+Oulu    2       17813.40008544922
+Paris   2       80215.4203491211
+Philadelphia    2       7287.240234375
+Reggio Emilia   2       41509.94006347656
+Reims   2       18971.959716796875
+Salzburg        2       98104.24005126953
+San Jose        2       160010.27026367188
+San Rafael      2       7261.75
+Singapore       2       92033.77014160156
+Strasbourg      2       80438.47985839844
+Tsawassen       2       31302.500244140625
+Allentown       3       71930.61041259766
+Bergen  3       16363.099975585938
+Boras   3       53941.68981933594
+Boston  3       15344.640014648438
+Brickhaven      3       114974.53967285156
+Brisbane        3       34100.030029296875
+Bruxelles       3       47760.479736328125
+Burlingame      3       42031.83020019531
+Cambridge       3       48828.71942138672
+Charleroi       3       1637.199951171875
+Chatswood       3       69694.40002441406
+Dublin  3       18971.959838867188
+Espoo   3       31569.430053710938
+Gensve  3       67281.00903320312
+Glen Waverly    3       12334.819580078125
+Glendale        3       7600.1201171875
+Helsinki        3       42744.0595703125
+Las Vegas       3       34453.84973144531
+Madrid  3       69714.09008789062
+Munich  3       34993.92004394531
+NYC     3       63027.92004394531
+Nantes  3       61310.880126953125
+New Bedford     3       45738.38952636719
+North Sydney    3       47191.76013183594
+Oslo    3       34145.47021484375
+Oulu    3       37501.580322265625
+Paris   3       27798.480102539062
+Pasadena        3       55776.119873046875
+Reggio Emilia   3       56421.650390625
+Reims   3       15146.31982421875
+Salzburg        3       6693.2802734375
+San Rafael      3       216297.40063476562
+Singapore       3       90250.07995605469
+South Brisbane  3       10640.290161132812
+Torino  3       94117.25988769531
+Toulouse        3       17251.08056640625
+Tsawassen       3       43332.349609375
+Aaarhus 4       100595.5498046875
+Allentown       4       44040.729736328125
+Barcelona       4       74192.66003417969
+Bergamo 4       81774.40008544922
+Bergen  4       95277.17993164062
+Boras   4       48710.92053222656
+Boston  4       63730.7802734375
+Brickhaven      4       11528.52978515625
+Bridgewater     4       26115.800537109375
+Burbank 4       8234.559936523438
+Burlingame      4       65221.67004394531
+Cambridge       4       54251.659912109375
+Charleroi       4       13463.480224609375
+Chatswood       4       37905.14990234375
+Cowes   4       51334.15966796875
+Frankfurt       4       36472.76025390625
+Glen Waverly    4       37878.54992675781
+Glendale        4       34485.49987792969
+Graz    4       43488.740234375
+Helsinki        4       42083.499755859375
+Kobenhavn       4       24078.610107421875
+Koln    4       100306.58020019531
+Las Vegas       4       14449.609741210938
+Lille   4       48874.28088378906
+Liverpool       4       26797.210083007812
+London  4       83970.029296875
+Los Angeles     4       24159.14013671875
+Lule    4       66005.8798828125
+Lyon    4       41535.11022949219
+Madrid  4       315580.80963134766
+Makati City     4       38770.71032714844
+Manchester      4       106789.88977050781
+Marseille       4       20136.859985351562
+Melbourne       4       91221.99914550781
+Minato-ku       4       55888.65026855469
+Montreal        4       15947.290405273438
+NYC     4       300011.6999511719
+Nantes  4       23031.589599609375
+Nashua  4       119552.04949951172
+New Bedford     4       113557.509765625
+New Haven       4       42498.760498046875
+North Sydney    4       41791.949462890625
+Oslo    4       45078.759765625
+Paris   4       89436.60034179688
+Pasadena        4       4512.47998046875
+Philadelphia    4       116503.07043457031
+Reggio Emilia   4       44669.740478515625
+Reims   4       48895.59014892578
+Salzburg        4       45001.10986328125
+San Francisco   4       151459.4805908203
+San Rafael      4       163983.64880371094
+Sevilla 4       54723.621154785156
+Singapore       4       77809.37023925781
+South Brisbane  4       27098.800048828125
+Stavern 4       61897.19006347656
+Toulouse        4       38098.240234375
+Vancouver       4       75238.91955566406
+Versailles      4       59074.90026855469
+White Plains    4       85555.98962402344
+
+
+
+
+
+h. Find a month for each year in which maximum number of quantities were sold
+
+hive>  with result as (select year_id,month_id,sum(quantityordered) as max_month_sale from sales_order_orc group by year_id,month_id)
+
+       select year_id,month_id,max(max_month_sale) as max_month_sale  from result group by year_id; 
+
+
+output:
+
+year_id	month_id	max_month_sale
+2003	11	        176
+2004	11	        225
+2005	5	        66
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
