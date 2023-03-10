@@ -1,0 +1,135 @@
+This is a real time dataset of the ineuron technical consultant team. You have to perform hive analysis on this given dataset.
+
+Download Dataset 1 - https://drive.google.com/file/d/1WrG-9qv6atP-W3P_-gYln1hHyFKRKMHP/view
+
+Download Dataset 2 - https://drive.google.com/file/d/1-JIPCZ34dyN6k9CqJa-Y8yxIGq6vTVXU/view
+
+Note: both files are csv files.
+
+1)Create a schema based on the given dataset
+
+A) 
+#Creating a database named Project
+
+create database Project;
+
+use Project;
+
+#Creating a schema for Agent_Loging_Report dataset
+
+create table Agent_Loging_Report
+     (
+     SL_No int,
+     Agent_Name string,
+     Date_Date string,
+     Login_Time string,
+     Logout_Time string,
+     Duration string
+     )
+     row format delimited
+     fields terminated by ',';
+
+#Creating a schema for Agent_Performance dataset
+
+
+create table Agent_Performance
+     (
+     SL_No int,
+     Date_Date string,
+     Agent_Name string,
+     Total_Chats int,
+     Average_Response_Time string,
+     Average_Resolution_Time string,
+     Average_Ratings float,
+     Total_Feedback int
+     )
+     row format delimited
+     fields terminated by ','
+     tblproperties("skip.header.line.count"="1");
+
+
+
+
+
+2)Dump the data inside the hdfs in the given schema location.
+
+A) 
+
+#loading data into Agent_Loging_Report table
+
+load data local inpath 'file:///config/workspace/AgentLogingReport.csv' into table agent_loging_report;
+
+#loading data into Agent_Performance table
+
+load data local inpath 'file:///config/workspace/AgentPerformance.csv' into table agent_performance;
+
+
+
+3)List of all agents' names.
+
+A) select distinct agent_name from agent_loging_report;
+
+
+4)Find out agent average rating.
+
+A) select agent_name,avg(average_ratings) from agent_performance group by agent_name;
+
+
+5)Total working days for each agents.
+
+A) hive> select Agent_Name,count(distinct Date_Date) from Agent_Loging_Report group by Agent_Name;
+
+
+
+6)Total query that each agent have taken.
+
+A) hive> select Agent_Name,sum(Total_Chats) from Agent_Performance group by Agent_name;
+
+
+
+7)Total Feedback that each agent have received.
+
+A) select agent_name,sum(total_feedback) from agent_performance group by agent_name; 
+
+
+8)Agent name who have average rating between 3.5 to 4.
+
+A) hive> select Agent_Name,avg(Average_Ratings) from Agent_Performance group by Agent_Name having avg(Average_Ratings) between 3.5 and 4;
+
+
+9)Agent name who have rating less than 3.5.
+
+A) hive> select DISTINCT Agent_Name,Average_Ratings from Agent_Performance where Average_Ratings<3.5; 
+
+
+10)Agent name who have rating more than 4.5.
+
+A) hive> select DISTINCT Agent_Name,Average_Ratings from Agent_Performance where Average_Ratings > 4.5;
+
+11)How many feedback agents have received more than 4.5 average.
+
+A)
+
+12)average weekly response time for each agent.
+
+A)
+
+13)average weekly resolution time for each agents.
+
+A)
+
+14)Find the number of chat on which they have received a feedback.
+
+A)
+
+15)Total contribution hour for each and every agents weekly basis.
+
+A)
+
+16)Perform inner join, left join and right join based on the agent column and after joining the table export that data into your local system.
+
+A)
+
+17)Perform partitioning on top of the agent column and then on top of that perform bucketing for each partitioning.
+
+A)
